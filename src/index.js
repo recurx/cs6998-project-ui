@@ -12,6 +12,8 @@ import Student from "./routes/student/student";
 import Referral from "./routes/student/routes/referral/referral";
 import Resume from "./routes/student/routes/resume/resume";
 import AccountState from './states/AccountState';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -43,6 +45,7 @@ const router = createBrowserRouter([
 root.render(
   <React.StrictMode>
     <RouterProvider router={router}/>
+    <ToastContainer />
   </React.StrictMode>
 );
 

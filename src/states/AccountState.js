@@ -6,7 +6,7 @@ import { AuthenticationDetails, CognitoUser } from "amazon-cognito-identity-js";
 const AccountState = (props) => {
     
     //user registration
-    const signup = async(email, name, password, profile, selectedOption)=> {
+    const signup = async(email, name, password, profile, selectedOption, companyName)=> {
         return await new Promise((resolve, reject) => {
             var attributeList = [];
 
@@ -25,17 +25,23 @@ const AccountState = (props) => {
                 Value: selectedOption
             }
 
+            var company = {
+                Name: "custom:company",
+                Value: companyName
+            }
+
             attributeList.push(userName);
             attributeList.push(userProfile);
             attributeList.push(userType);
+            attributeList.push(company)
 
             userPool.signUp(email, password, attributeList, null, (err, data) => {
                 if(err) {
                     console.log("Failed to register", err.message);
-                    reject();
+                    reject(err);
                 } else {
                     console.log("Account Created Successfully", data);
-                    resolve();
+                    resolve(data);
                 }
             })
 
@@ -56,10 +62,10 @@ const AccountState = (props) => {
             cognitoUser.confirmRegistration(code, true, (err, data) => {
                 if(err) {
                     console.log("Failed to confirm user", err.message);
-                    reject();
+                    reject(err);
                 } else {
                     console.log("Account Verified Successfully", data);
-                    resolve();
+                    resolve(data);
                 }
             })
 

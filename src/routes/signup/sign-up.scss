@@ -13,7 +13,7 @@
 
   .login-box {
     width: 400px;
-    height: 550px;
+    height: fit-content;
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -43,7 +43,7 @@
       justify-content: flex-start;
       gap: 13px;
       color: #0133a0;
-      margin: 20px 0 0;
+      margin: 12px 0 12px;
       border: 1px dashed $light-blue;
 
       label {

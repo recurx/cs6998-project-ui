@@ -1,5 +1,8 @@
 import React, {useEffect, useRef, useState} from "react";
 import './referral.scss'
+import axios from "axios";
+import {toast} from "react-toastify";
+import {format} from 'date-fns';
 
 const Referral = () => {
   const defaultReferrers = [
@@ -54,6 +57,28 @@ const Referral = () => {
   useEffect(() => {
     // TODO: API call to fetch pastRequests
     console.log("useEffect TODO: API call to fetch pastRequests")
+    // https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/referral-requests?userId=ab5434@columbia.edu
+    let loginInfo = JSON.parse(localStorage.getItem('login'));
+
+    (async () => {
+      try {
+        let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/referral-requests?userId=' + loginInfo.email);
+        let data = result.data.requests;
+        console.log(data);
+        for (let i=0; i<data.length; i++) {
+          var date = new Date(data[i].timestamp * 1000);
+          data[i].date = format(date, 'yyyy-MM-dd');
+          if (data[i].aid_profile) {
+            data[i].referrer = data[i].aid_profile.name
+            data[i].company = data[i].aid_profile.company
+          }
+        }
+        setPastRequests(data);
+      } catch (e) {
+        toast.error("Failed to get past requests!")
+      }
+    })();
+
   }, [])
 
   const askReferral = (referrer) => {
@@ -71,10 +96,16 @@ const Referral = () => {
   const getStatusLabel = (rstatus) => {
     console.log("here")
     switch (rstatus) {
-      case 'pending': return <div className={'status'} style={{color: '#fba505'}}>PENDING</div>
-      case 'done': return <div className={'status'} style={{color: '#0a8800'}}>DONE</div>
-      case 'rejected': return <div className={'status'} style={{color: '#fd4040'}}>REJECTED</div>
-      default: return <div className={'status'} style={{color: '#000000'}}>INVALID</div>
+      case 'pending':
+        return <div className={'status'} style={{color: '#fba505'}}>PENDING</div>
+      case 'accepted':
+        return <div className={'status'} style={{color: '#0a8800'}}>ACCEPTED</div>
+      case 'completed':
+        return <div className={'status'} style={{color: '#4b4b4b'}}>COMPLETED</div>
+      case 'rejected':
+        return <div className={'status'} style={{color: '#fd4040'}}>REJECTED</div>
+      default:
+        return <div className={'status'} style={{color: '#000000'}}>INVALID</div>
     }
   }
 
