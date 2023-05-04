@@ -16,7 +16,7 @@ export default function Home() {
     authenticate(email, password)
     .then(data => {
       console.log("Login Successful", data);
-      let localStorageValue = {email: email, apiKey: 'xyz'};
+      let localStorageValue = {email: data['idToken']['payload']['email'], jwt: data['idToken']['jwtToken']};
       localStorage.setItem('login', JSON.stringify(localStorageValue));
       navigate('/student');
     })

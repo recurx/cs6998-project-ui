@@ -18,7 +18,7 @@ const Student = () => {
   useEffect(() => {
     try {
       let loginInfo = JSON.parse(localStorage.getItem('login'));
-      if (loginInfo && loginInfo.email && loginInfo.apiKey) {
+      if (loginInfo && loginInfo.email && loginInfo.jwt) {
         loginInfoRef.current = (loginInfo)
       } else {
         navigate('/');
