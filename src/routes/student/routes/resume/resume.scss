@@ -1,0 +1,110 @@
+@import "src/common-styles/_colors";
+
+.resume {
+  width: 100%;
+
+  .request {
+    width: 70%;
+    margin: 50px auto;
+    border: 1px solid $dark-blue;
+    padding: 23px 30px;
+
+    .header {
+      font-weight: 500;
+      font-size: 20px;
+      line-height: 24px;
+      color: $dark-blue;
+    }
+    .body {
+      margin-top: 35px;
+      display: flex;
+      gap: 40px;
+      .text {
+        font-size: 15px;
+      }
+      .left-pane {
+        .radio-pane>label {
+          width: 354px;
+          height: 27px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 5px 12px;
+          margin: 6px 0;
+          background-color: $lighter-blue;
+
+          &:hover {
+            background-color: $light-blue;
+            cursor: pointer;
+          }
+        }
+        .upload-box>label {
+          display: flex;
+          width: 354px;
+          height: 27px;
+          justify-content: center;
+          align-items: center;
+          padding: 3px 10px;
+          margin: 6px 0;
+          border: 1.5px dashed $dark-blue;
+          color: $dark-blue;
+          cursor: pointer;
+        }
+        .btn {
+          margin-top: 23px;
+          width: 128px;
+          height: 31px;
+          background: $dark-blue;
+          color: white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+
+          &.disabled {
+            cursor: not-allowed;
+          }
+        }
+      }
+      .right-pane {
+        input {
+          width: 309px;
+          height: 24px;
+          background: #FFFFFF;
+          border: 1px solid $dark-blue;
+          font-size: 12px;
+          padding: 5px;
+          margin-top: 5px;
+        }
+      }
+    }
+  }
+
+  .past {
+    width: 74%;
+    margin: 50px auto;
+
+    table {
+      margin-top: 30px;
+      border-collapse: collapse;
+      width: 100%;
+      th {
+        font-size: 20px;
+        font-weight: normal;
+        padding: 20px;
+        text-align: start;
+        border: 1px solid $dark-blue;
+      }
+      td {
+        border: 1px solid $dark-blue;
+        padding: 20px;
+      }
+      .status {
+        width: 72px;
+        height: 24px;
+        border-radius: 6px;
+        border: 0;
+      }
+    }
+  }
+}
