@@ -24,16 +24,24 @@ const AccountState = (props) => {
                 Name: "custom:userType",
                 Value: selectedOption
             }
-
-            var company = {
-                Name: "custom:company",
-                Value: companyName
+            
+            if(companyName) {
+                var company = {
+                    Name: "custom:company",
+                    Value: companyName
+                }
             }
-
+            else {
+                var company = {
+                    Name: "custom:company",
+                    Value: "Student"
+                }                
+            }
             attributeList.push(userName);
             attributeList.push(userProfile);
             attributeList.push(userType);
             attributeList.push(company)
+            console.log(attributeList);
 
             userPool.signUp(email, password, attributeList, null, (err, data) => {
                 if(err) {
