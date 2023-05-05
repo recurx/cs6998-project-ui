@@ -2,6 +2,7 @@ import React, {useState, useContext} from "react";
 import './home.scss'
 import {useNavigate} from "react-router-dom";
 import AccountContext from "../../context/AccountContext";
+import {toast} from "react-toastify";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -11,6 +12,12 @@ export default function Home() {
 
   const {authenticate} = useContext(AccountContext);
 
+  const navigateAccToType = (email) => {
+    // TODO: get user type by email and navigate accordingly
+    // navigate('/student');
+    navigate('/alumni')
+  }
+
   const handleLogin = (event) => {
     event.preventDefault();
     authenticate(email, password)
@@ -18,10 +25,11 @@ export default function Home() {
       console.log("Login Successful", data);
       let localStorageValue = {email: data['idToken']['payload']['email'], jwt: data['idToken']['jwtToken']};
       localStorage.setItem('login', JSON.stringify(localStorageValue));
-      navigate('/student');
+      navigateAccToType(email)
     })
     .catch(err => {
       console.log("Failed to login", err.message);
+      toast.error("Failed to login: " + err.message)
     })
   }
 

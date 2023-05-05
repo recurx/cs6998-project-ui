@@ -14,6 +14,7 @@ import Resume from "./routes/student/routes/resume/resume";
 import AccountState from './states/AccountState';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Alumni from "./routes/alumni/alumni";
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
         element: <Resume />
       }
     ]
+  },
+  {
+    path: "alumni",
+    element: <Alumni />
   }
 ]);
 
