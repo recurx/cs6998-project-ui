@@ -1,8 +1,11 @@
-import React, {useEffect, useState} from "react";
-import {NavLink, Outlet} from "react-router-dom";
+import React, {useEffect, useRef, useState} from "react";
+import {NavLink, Outlet, useNavigate} from "react-router-dom";
 import chatSvg from "../../assets/chat.svg";
 import './alumni.scss'
 import {useImmer} from "use-immer";
+import axios from "axios";
+import {format} from "date-fns";
+import {toast} from "react-toastify";
 
 const Alumni = () => {
   const defaultPastResumeRequests = [
@@ -45,9 +48,39 @@ const Alumni = () => {
   const [pastResumeRequests, setPastResumeRequests] = useImmer(defaultPastResumeRequests)
   const [pastReferralRequests, setPastReferralRequests] = useImmer(defaultPastReferralRequests)
   const [user, setUser] = useState({name: 'Avery', email: 'avery@columbia.edu', openToRefer: 'yes', openToReview: 'no'})
+  const loginInfoRef = useRef();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO: call user api and update user state
+    let loginInfo = JSON.parse(localStorage.getItem('login'));
+    try {
+      if (loginInfo && loginInfo.email && loginInfo.jwt) {
+        loginInfoRef.current = (loginInfo)
+      } else {
+        navigate('/');
+      }
+    } catch (e) {
+      navigate('/');
+    }
+
+    (async () => {
+      try {
+        let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/referral-requests?userId=' + loginInfo.email);
+        let data = result.data.requests;
+        console.log(data);
+        for (let i=0; i<data.length; i++) {
+          var date = new Date(data[i].timestamp * 1000);
+          data[i].date = format(date, 'yyyy-MM-dd');
+          if (data[i].aid_profile) {
+            data[i].referrer = data[i].aid_profile.name
+            data[i].company = data[i].aid_profile.company
+          }
+        }
+        //setPastRequests(data);
+      } catch (e) {
+        toast.error("Failed to get past requests!")
+      }
+    })();
   }, [])
 
   const changeOpenToRefer = (e) => {

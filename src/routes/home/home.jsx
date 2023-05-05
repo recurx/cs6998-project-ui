@@ -3,6 +3,8 @@ import './home.scss'
 import {useNavigate} from "react-router-dom";
 import AccountContext from "../../context/AccountContext";
 import {toast} from "react-toastify";
+import axios from "axios";
+import {format} from "date-fns";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -13,9 +15,18 @@ export default function Home() {
   const {authenticate} = useContext(AccountContext);
 
   const navigateAccToType = (email) => {
-    // TODO: get user type by email and navigate accordingly
-    // navigate('/student');
-    navigate('/alumni')
+    (async () => {
+      try {
+        let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/user-profile?userId=' + email);
+        let userType = result.data.requests.userType;
+        if (userType === 'student')
+          navigate('/student')
+        else
+          navigate('/alumni')
+      } catch (e) {
+        toast.error("Login error!")
+      }
+    })();
   }
 
   const handleLogin = (event) => {
