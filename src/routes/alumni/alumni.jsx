@@ -9,46 +9,8 @@ import {format} from "date-fns";
 import {toast} from "react-toastify";
 
 const Alumni = () => {
-  const defaultPastResumeRequests = [
-    {
-      date: '04/11/2023',
-      student: 'Loop me',
-      status: 'pending',
-    },
-    {
-      date: '04/01/2023',
-      student: 'Cool deed',
-      status: 'completed',
-    },
-    {
-      date: '04/11/2023',
-      student: 'Mr. X',
-      status: 'rejected',
-    },
-  ]
-  const defaultPastReferralRequests = [
-    {
-      date: '04/11/2023',
-      student: 'Loop me',
-      company: 'Google',
-      status: 'pending',
-    },
-    {
-      date: '04/01/2023',
-      student: 'Cool deed',
-      company: 'Columbia ccbd',
-      status: 'completed',
-    },
-    {
-      date: '04/11/2023',
-      student: 'Mr. X',
-      company: 'CCBD',
-      status: 'rejected',
-    },
-  ]
-  const [pastResumeRequests, setPastResumeRequests] = useImmer(defaultPastResumeRequests)
-  const [pastReferralRequests, setPastReferralRequests] = useImmer(defaultPastReferralRequests)
-  const [user, setUser] = useState({name: 'Avery', email: 'avery@columbia.edu', openToRefer: 'yes', openToReview: 'no'})
+  const [pastResumeRequests, setPastResumeRequests] = useImmer([])
+  const [pastReferralRequests, setPastReferralRequests] = useImmer([])
   const loginInfoRef = useRef();
   const [userInfo, setUserInfo] = useState({})
   const navigate = useNavigate();
@@ -77,6 +39,7 @@ const Alumni = () => {
           if (data[i].sid_profile) {
             data[i].student = data[i].sid_profile.name
             data[i].profile = data[i].sid_profile.profile
+            data[i].company = data[i].aid_profile.company
           }
         }
         setPastReferralRequests(data);
@@ -104,34 +67,38 @@ const Alumni = () => {
     })();
   }, [])
 
-  const changeOpenToRefer = (e) => {
-    // TODO: call user update API
-    setUser({...user, openToRefer: e.target.value})
-  }
+  // const changeOpenToRefer = (e) => {
+  //   setUser({...user, openToRefer: e.target.value})
+  // }
+  //
+  // const changeOpenToReview = (e) => {
+  //   setUser({...user, openToReview: e.target.value})
+  // }
 
-  const changeOpenToReview = (e) => {
-    // TODO: call user update API
-    setUser({...user, openToReview: e.target.value})
-  }
+  const changeRequestStatus = (type, index, newStatus) => {
+    (async () => {
+      try {
+        const pastRequests = type === 'referral' ? pastReferralRequests : pastResumeRequests;
+        const setRequests = type === 'referral' ? setPastReferralRequests : setPastResumeRequests;
+        const request = {
+          "userId": pastRequests[index].sid_profile.emailId,
+          "alumniId": pastRequests[index].aid_profile.emailId,
+          "timestamp": pastRequests[index].timestamp,
+          "newStatus": newStatus
+        }
+        if (type === 'resume') {
+          request.resumeId = pastRequests[index].rid
+        }
+        await axios.put(`https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/${type}-requests`, request);
 
-  const changeResumeRequestStatus = (index, newStatus) => {
-    // TODO: call API
-    setPastResumeRequests(reqs => {
-      reqs[index].status = newStatus
-    })
-  }
+        setRequests(reqs => {
+          reqs[index].status = newStatus
+        })
+      } catch (e) {
+        toast.error("Failed to update status!")
+      }
+    })();
 
-  const changeReferralRequestStatus = (index, newStatus) => {
-    const request = {
-      "userId": pastReferralRequests[index].sidProfile.emailId,
-      "alumniId": pastReferralRequests[index].aidProfile.emailId,
-      "timestamp": pastResumeRequests[index].timestamp,
-      "newStatus": newStatus
-    }
-
-    setPastReferralRequests(reqs => {
-      reqs[index].status = newStatus
-    })
   }
 
   const getStatusLabel = (rstatus) => {
@@ -179,168 +146,173 @@ const Alumni = () => {
       </div>
       <div className={'body'}>
         <div className={'welcome'}>
-          Hello {user.name}, Thank you so much for your contributions!
+          Hello {userInfo.name}, Thank you so much for your contributions!
           Your efforts have helped the students a lot. You are a star!!!
         </div>
-        <div className={'preferences'}>
-          <div className={'pref'}>
-            <span>Are you open to giving referrals to students?</span>
-            <label style={{color: "#0033A0"}}><input type={'radio'} name={'referral'}
-                                                     value={'yes'}
-                                                     checked={user.openToRefer === 'yes'}
-                                                     onChange={changeOpenToRefer}/>Yes</label>
-            <label style={{color: "#ff7373"}}><input type={'radio'} name={'referral'}
-                                                     value={'no'}
-                                                     checked={user.openToRefer === 'no'}
-                                                     onChange={changeOpenToRefer}/>No</label>
-          </div>
-          <div className={'pref'}>
-            <span>Are you open to reviewing resumes?</span>
-            <label style={{color: "#0033A0"}}><input type={'radio'} name={'resume'}
-                                                     value={'yes'}
-                                                     checked={user.openToReview === 'yes'}
-                                                     onChange={changeOpenToReview}/>Yes</label>
-            <label style={{color: "#ff7373"}}><input type={'radio'} name={'resume'}
-                                                     value={'no'}
-                                                     checked={user.openToReview === 'no'}
-                                                     onChange={changeOpenToReview}/>No</label>
-          </div>
-        </div>
-        <div className={'past'}>
-          <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Referral requests</div>
-          <table>
-            <thead>
-            <tr>
-              <th>Date</th>
-              <th>Student</th>
-              <th>Company</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {pastReferralRequests.map((request, index) => {
-              return <tr key={index}>
-                <td>{request.date}</td>
-                <td>
-                  <a href={request.profile} target={'_blank'}>
-                    {request.student}
-                  </a>
-                </td>
-                <td>{request.company}</td>
-                <td>{getStatusLabel(request.status)}</td>
-                <td>
-                  {
-                    request.status === 'pending' &&
-                    <>
-                      <label style={{color: "#0033A0"}}><input type={'checkbox'} name={`req-${index}`}
-                                                               value={'accepted'}
-                                                               checked={request.status === 'accepted'}
-                                                               onChange={() => changeReferralRequestStatus(index, 'accepted')}/>
-                        Accept
-                      </label>
-                      <label style={{color: "#ff7373"}}><input type={'checkbox'} name={`req-${index}`}
-                                                               value={'rejected'}
-                                                               checked={request.status === 'rejected'}
-                                                               onChange={() => changeReferralRequestStatus(index, 'rejected')}/>
-                        Reject
-                      </label>
-                    </>
-                  }
-                  {
-                    request.status === 'accepted' &&
-                    <label style={{color: "#4b4b4b"}}><input type={'checkbox'} name={`req-${index}`}
-                                                             value={'completed'}
-                                                             checked={request.status === 'completed'}
-                                                             onChange={() => changeReferralRequestStatus(index, 'completed')}/>
-                      Mark Completed
-                    </label>
-                  }
-                  {
-                    request.status === 'completed' &&
-                    <span>Thank you :)</span>
-                  }
-                  {
-                    request.status === 'rejected' &&
-                    <span>We'll find a better match for you next time!</span>
-                  }
-                </td>
+        {/*<div className={'preferences'}>*/}
+        {/*  <div className={'pref'}>*/}
+        {/*    <span>Are you open to giving referrals to students?</span>*/}
+        {/*    <label style={{color: "#0033A0"}}><input type={'radio'} name={'referral'}*/}
+        {/*                                             value={'yes'}*/}
+        {/*                                             checked={user.openToRefer === 'yes'}*/}
+        {/*                                             onChange={changeOpenToRefer}/>Yes</label>*/}
+        {/*    <label style={{color: "#ff7373"}}><input type={'radio'} name={'referral'}*/}
+        {/*                                             value={'no'}*/}
+        {/*                                             checked={user.openToRefer === 'no'}*/}
+        {/*                                             onChange={changeOpenToRefer}/>No</label>*/}
+        {/*  </div>*/}
+        {/*  <div className={'pref'}>*/}
+        {/*    <span>Are you open to reviewing resumes?</span>*/}
+        {/*    <label style={{color: "#0033A0"}}><input type={'radio'} name={'resume'}*/}
+        {/*                                             value={'yes'}*/}
+        {/*                                             checked={user.openToReview === 'yes'}*/}
+        {/*                                             onChange={changeOpenToReview}/>Yes</label>*/}
+        {/*    <label style={{color: "#ff7373"}}><input type={'radio'} name={'resume'}*/}
+        {/*                                             value={'no'}*/}
+        {/*                                             checked={user.openToReview === 'no'}*/}
+        {/*                                             onChange={changeOpenToReview}/>No</label>*/}
+        {/*  </div>*/}
+        {/*</div>*/}
+        {
+          pastReferralRequests.length > 0 &&
+          <div className={'past'}>
+            <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Referral requests</div>
+            <table>
+              <thead>
+              <tr>
+                <th>Date</th>
+                <th>Student</th>
+                <th>Company</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            })}
-
-            </tbody>
-          </table>
-        </div>
-
-        <div className={'past'}>
-          <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Resume requests</div>
-          <table>
-            <thead>
-            <tr>
-              <th>Date</th>
-              <th>Student</th>
-              <th>Resume</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            {pastResumeRequests.map((request, index) => {
-              return <tr key={index}>
-                <td>{request.date}</td>
-                <td>
-                  <a href={request.profile}>
-                    {request.student}
-                  </a>
-                </td>
-                <td>
-                  <a href={`https://ccbdproj-cc-resumes.s3.amazonaws.com/${request.rid}`} target={'_blank'}>
-                    {request.rid}
-                  </a>
-                </td>
-                <td>{getStatusLabel(request.status)}</td>
-                <td>
-                  {
-                    request.status === 'pending' &&
-                    <>
-                      <label style={{color: "#0033A0"}}><input type={'checkbox'} name={`req-${index}`}
-                                                               value={'accepted'}
-                                                               checked={request.status === 'accepted'}
-                                                               onChange={() => changeResumeRequestStatus(index, 'accepted')}/>
-                        Accept
+              </thead>
+              <tbody>
+              {pastReferralRequests.map((request, index) => {
+                return <tr key={index}>
+                  <td>{request.date}</td>
+                  <td>
+                    <a href={request.profile} target={'_blank'}>
+                      {request.student}
+                    </a>
+                  </td>
+                  <td>{request.company}</td>
+                  <td>{getStatusLabel(request.status)}</td>
+                  <td>
+                    {
+                      request.status === 'pending' &&
+                      <>
+                        <label style={{color: "#0033A0"}}><input type={'checkbox'} name={`req-${index}`}
+                                                                 value={'accepted'}
+                                                                 checked={request.status === 'accepted'}
+                                                                 onChange={() => changeRequestStatus('referral', index, 'accepted')}/>
+                          Accept
+                        </label>
+                        <label style={{color: "#ff7373"}}><input type={'checkbox'} name={`req-${index}`}
+                                                                 value={'rejected'}
+                                                                 checked={request.status === 'rejected'}
+                                                                 onChange={() => changeRequestStatus('referral', index, 'rejected')}/>
+                          Reject
+                        </label>
+                      </>
+                    }
+                    {
+                      request.status === 'accepted' &&
+                      <label style={{color: "#4b4b4b"}}><input type={'checkbox'} name={`req-${index}`}
+                                                               value={'completed'}
+                                                               checked={request.status === 'completed'}
+                                                               onChange={() => changeRequestStatus('referral', index, 'completed')}/>
+                        Mark Completed
                       </label>
-                      <label style={{color: "#ff7373"}}><input type={'checkbox'} name={`req-${index}`}
-                                                               value={'rejected'}
-                                                               checked={request.status === 'rejected'}
-                                                               onChange={() => changeResumeRequestStatus(index, 'rejected')}/>
-                        Reject
-                      </label>
-                    </>
-                  }
-                  {
-                    request.status === 'accepted' &&
-                    <label style={{color: "#4b4b4b"}}><input type={'checkbox'} name={`req-${index}`}
-                                                             value={'completed'}
-                                                             checked={request.status === 'completed'}
-                                                             onChange={() => changeResumeRequestStatus(index, 'completed')}/>
-                      Mark Completed
-                    </label>
-                  }
-                  {
-                    request.status === 'completed' &&
-                    <span>Thank you :)</span>
-                  }
-                  {
-                    request.status === 'rejected' &&
-                    <span>We'll find a better match for you next time!</span>
-                  }
-                </td>
+                    }
+                    {
+                      request.status === 'completed' &&
+                      <span>Thank you :)</span>
+                    }
+                    {
+                      request.status === 'rejected' &&
+                      <span>We'll find a better match for you next time!</span>
+                    }
+                  </td>
+                </tr>
+              })}
+
+              </tbody>
+            </table>
+          </div>
+        }
+        {
+          pastResumeRequests.length > 0 &&
+          <div className={'past'}>
+            <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Resume requests</div>
+            <table>
+              <thead>
+              <tr>
+                <th>Date</th>
+                <th>Student</th>
+                <th>Resume</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            })}
+              </thead>
+              <tbody>
+              {pastResumeRequests.map((request, index) => {
+                return <tr key={index}>
+                  <td>{request.date}</td>
+                  <td>
+                    <a href={request.profile}>
+                      {request.student}
+                    </a>
+                  </td>
+                  <td>
+                    <a href={`https://resume-bucket-p1.s3.amazonaws.com/${request.rid}`} target={'_blank'}>
+                      {request.rid}
+                    </a>
+                  </td>
+                  <td>{getStatusLabel(request.status)}</td>
+                  <td>
+                    {
+                      request.status === 'pending' &&
+                      <>
+                        <label style={{color: "#0033A0"}}><input type={'checkbox'} name={`req-${index}`}
+                                                                 value={'accepted'}
+                                                                 checked={request.status === 'accepted'}
+                                                                 onChange={() => changeRequestStatus('resume', index, 'accepted')}/>
+                          Accept
+                        </label>
+                        <label style={{color: "#ff7373"}}><input type={'checkbox'} name={`req-${index}`}
+                                                                 value={'rejected'}
+                                                                 checked={request.status === 'rejected'}
+                                                                 onChange={() => changeRequestStatus('resume', index, 'rejected')}/>
+                          Reject
+                        </label>
+                      </>
+                    }
+                    {
+                      request.status === 'accepted' &&
+                      <label style={{color: "#4b4b4b"}}><input type={'checkbox'} name={`req-${index}`}
+                                                               value={'completed'}
+                                                               checked={request.status === 'completed'}
+                                                               onChange={() => changeRequestStatus('resume', index, 'completed')}/>
+                        Mark Completed
+                      </label>
+                    }
+                    {
+                      request.status === 'completed' &&
+                      <span>Thank you :)</span>
+                    }
+                    {
+                      request.status === 'rejected' &&
+                      <span>We'll find a better match for you next time!</span>
+                    }
+                  </td>
+                </tr>
+              })}
 
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        }
       </div>
     </div>
   )
