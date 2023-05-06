@@ -19,6 +19,7 @@ export default function Home() {
       try {
         let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/user-profile?userId=' + email);
         let userType = result.data.requests.userType;
+        localStorage.setItem('userInfo', JSON.stringify(result.data.requests));
         if (userType === 'student')
           navigate('/student')
         else

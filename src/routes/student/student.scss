@@ -9,6 +9,8 @@
     height: 100px;
     align-items: center;
     justify-content: space-between;
+    background-color: aliceblue;
+    box-shadow: 2px -6px 9px 0px rgba(0,0,0,0.75);
 
     .logo {
       font-size: 32px;
@@ -37,11 +39,27 @@
         }
       }
     }
-    .chat-btn {
-      margin-right: 45px;
-      width: 165px;
+    .right-btns {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
+      .logout-btn {
+        margin-right: 25px;
+        display: flex;
+        justify-content: flex-end;
+        img {
+          width: 30px;
+          cursor: pointer;
+        }
+      }
+      .chat-btn {
+        margin-right: 45px;
+        display: flex;
+        justify-content: flex-end;
+        img {
+          width: 25px;
+        }
+      }
     }
   }
 }

@@ -43,17 +43,33 @@ const Resume = () => {
   const [reviewers, setReviewers] = useState(defaultReviewers)
   const [pastRequests, setPastRequests] = useState(defaultPastRequests)
   const [resumes, setResumes] = useState(['resume_ml.pdf', 'resume_cv.pdf'])
-  const [resumeBalance, setResumeBalance] = useState(5)
   const [selectedResume, setSelectedResume] = useState()
   const [selectedReviewer, setSelectedReviewer] = useState()
+  const [userInfo, setUserInfo] = useState({})
   const keywordsRef = useRef()
+  const loginInfoRef = useRef()
 
   // RESUME_SELECTION/REVIEWER_SELECTION
   const [resumeRequestStep, setResumeRequestStep] = useState('RESUME_SELECTION')
 
   useEffect(() => {
     // TODO: call user api to get resumes, request-balance
+    refreshUser()
   }, [])
+
+  const refreshUser = () => {
+    (async () => {
+      try {
+        let loginInfo = JSON.parse(localStorage.getItem('login'));
+        let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/user-profile?userId=' + loginInfo.email);
+        let user = result.data.requests;
+        localStorage.setItem('userInfo', JSON.stringify(user));
+        setUserInfo(user)
+      } catch (e) {
+        toast.error("Failed!")
+      }
+    })();
+  }
 
   const getStatusLabel = (rstatus) => {
     switch (rstatus) {
@@ -72,12 +88,10 @@ const Resume = () => {
 
   const selectResume = (event) => {
     setSelectedResume(event.target.value)
-    //toast.success('hehe')
   }
 
   const selectReviewer = (reviewer) => {
     setSelectedReviewer(reviewer)
-    //toast.success('hehe')
   }
 
   const uploadToS3 = (e) => {
@@ -85,6 +99,8 @@ const Resume = () => {
       return
     }
     let file = e.target.files[0]
+    var blob = file.slice(0, file.size, file.type);
+    file = new File([blob], new Date().getTime() + '_' + file.name, {type: file.type});
     const config = {
       headers: {
         'Content-Type': file.type,
@@ -97,18 +113,18 @@ const Resume = () => {
     };
     console.log(file)
 
-    // TODO: replace with new s3 url
-    // const url = 'https://bhrg9dwg9d.execute-api.us-east-1.amazonaws.com/prod/upload/ccbd-b2-photos-ga/' + file.name;
-    //
-    // return axios.put(url, file, config)
-    //   .then((response) => {
-    //     console.log('File uploaded to s3 successfully!', response);
-    //     TODO: call update user api and then refresh user
-    //   })
-    //   .catch((error) => {
-    //     console.error('Error uploading file!', error);
-    //     toast("Resume upload failed!")
-    //   });
+    const url = 'https://wexa2c5ut9.execute-api.us-east-1.amazonaws.com/v1/upload/resume-bucket-p1/' + file.name;
+
+    return axios.put(url, file, config)
+      .then((response) => {
+        console.log('File uploaded to s3 successfully!', response);
+        // TODO: call resume-update api
+        refreshUser()
+      })
+      .catch((error) => {
+        console.error('Error uploading file!', error);
+        toast("Resume upload failed!")
+      });
   };
 
 
@@ -143,7 +159,9 @@ const Resume = () => {
               <div>
                 <div className={'text'}>Choose a resume:</div>
                 {
-                  resumes.map(resume =>
+                  userInfo.resumes &&
+                  userInfo.resumes.length > 0 &&
+                  userInfo.resumes.map(resume =>
                     <div className={'radio-pane'}>
                       <label>
                         {resume}

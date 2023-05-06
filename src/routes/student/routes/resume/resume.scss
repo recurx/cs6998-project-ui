@@ -93,7 +93,8 @@
         font-weight: normal;
         padding: 20px;
         text-align: start;
-        border: 1px solid $dark-blue;
+        background-color: $dark-blue;
+        color: white;
       }
       td {
         border: 1px solid $dark-blue;
