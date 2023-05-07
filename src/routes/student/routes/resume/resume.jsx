@@ -19,7 +19,6 @@ const Resume = () => {
   const [resumeRequestStep, setResumeRequestStep] = useState('RESUME_SELECTION')
 
   useEffect(() => {
-    // TODO: call user api to get resumes, request-balance
     refreshUser()
     getPastRequests()
   }, [])
