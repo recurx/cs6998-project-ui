@@ -142,7 +142,11 @@ const Referral = () => {
               <tbody>
               {referrers.map((referrer, index) => {
                 return <tr key={index}>
-                  <td>{referrer.name}</td>
+                  <td>
+                    <a href={referrer.profile} target={'_blank'}>
+                      {referrer.name}
+                    </a>
+                  </td>
                   <td>{referrer.company}</td>
                   <td>
                     <button onClick={() => askReferral(referrer)} style={{width: '90%', cursor: 'pointer'}}>Ask
@@ -176,7 +180,11 @@ const Referral = () => {
             {pastRequests.map((request, index) => {
               return <tr key={index}>
                 <td>{request.date}</td>
-                <td>{request.referrer}</td>
+                <td>
+                  <a href={request.aid_profile && request.aid_profile.profile} target={'_blank'}>
+                    {request.referrer}
+                  </a>
+                </td>
                 <td>{request.company}</td>
                 <td>
                   {getStatusLabel(request.status)}
