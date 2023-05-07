@@ -22,7 +22,14 @@ export default function SignUp() {
   }
 
   const handleRegistration = (event) => {
-    event.preventDefault();
+    if (email === '' || name === '' || password === '' || profile === '') {
+      toast.error('Please fill all the fields!')
+      return
+    }
+    if (selectedOption === 'alumni' && company === '') {
+      toast.error('Please fill all the fields!')
+      return
+    }
     signup(email, name, password, profile, selectedOption, company)
       .then(data => {
         console.log("Registration Successful", data);
