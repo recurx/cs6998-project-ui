@@ -23,6 +23,15 @@
         font-size: 15px;
       }
       .left-pane {
+        .radio-pane {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          img {
+            width: 28px;
+            margin-top: 2px;
+          }
+        }
         .radio-pane>label {
           width: 354px;
           height: 27px;

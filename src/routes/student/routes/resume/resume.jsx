@@ -4,50 +4,16 @@ import axios from "axios";
 import {toast} from "react-toastify";
 import {format} from 'date-fns';
 import FileBase64 from 'react-file-base64';
+import linkedinSvg from "../../../../assets/linkedin.svg"
 
 const Resume = () => {
-  const defaultPastRequests = [
-    {
-      date: '04/11/2023',
-      resume: 'Loop me',
-      reviewer: 'John',
-      status: 'pending',
-    },
-    {
-      date: '04/01/2023',
-      resume: 'Cool deed',
-      reviewer: 'Jay',
-      status: 'done',
-    },
-    {
-      date: '04/11/2023',
-      resume: 'Mr. X',
-      reviewer: 'Avery',
-      status: 'rejected',
-    },
-  ]
-  const defaultReviewers = [
-    {
-      name: 'Avery',
-      email: 'avery@columbia.edu'
-    },
-    {
-      name: 'Uris',
-      email: 'Uris@columbia.edu'
-    },
-    {
-      name: 'Carlton',
-      email: 'Carlton@columbia.edu'
-    },
-  ]
-  const [reviewers, setReviewers] = useState(defaultReviewers)
-  const [pastRequests, setPastRequests] = useState(defaultPastRequests)
+  const [reviewers, setReviewers] = useState([])
+  const [pastRequests, setPastRequests] = useState([])
   const [resumes, setResumes] = useState(['resume_ml.pdf', 'resume_cv.pdf'])
   const [selectedResume, setSelectedResume] = useState()
   const [selectedReviewer, setSelectedReviewer] = useState()
   const [userInfo, setUserInfo] = useState({})
   const keywordsRef = useRef()
-  const loginInfoRef = useRef()
 
   // RESUME_SELECTION/REVIEWER_SELECTION
   const [resumeRequestStep, setResumeRequestStep] = useState('RESUME_SELECTION')
@@ -55,7 +21,28 @@ const Resume = () => {
   useEffect(() => {
     // TODO: call user api to get resumes, request-balance
     refreshUser()
+    getPastRequests()
   }, [])
+
+  const getPastRequests = () => {
+    let loginInfo = JSON.parse(localStorage.getItem('login'));
+    (async () => {
+      try {
+        let result = await axios.get('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/resume-requests?userId=' + loginInfo.email);
+        let data = result.data.requests;
+        for (let i=0; i<data.length; i++) {
+          var date = new Date(data[i].timestamp * 1000);
+          data[i].date = format(date, 'yyyy-MM-dd');
+          if (data[i].aid_profile) {
+            data[i].reviewer = data[i].aid_profile.name
+          }
+        }
+        setPastRequests(data);
+      } catch (e) {
+        toast.error("Failed to get past requests!")
+      }
+    })();
+  }
 
   const refreshUser = () => {
     (async () => {
@@ -94,6 +81,22 @@ const Resume = () => {
     setSelectedReviewer(reviewer)
   }
 
+  const updateUserResume = (rid) => {
+    let email = JSON.parse(localStorage.getItem('login')).email;
+    return axios.post('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/upload-resume', {
+      'userId': email,
+      'resumeId': rid
+    })
+      .then((response) => {
+        console.log('Upload Api success!', response);
+        refreshUser()
+      })
+      .catch((error) => {
+        console.error('Error updating resume!', error);
+        toast("Resume upload failed!")
+      });
+  }
+
   const uploadToS3 = (e) => {
     if (e.target.files.length === 0) {
       return
@@ -118,8 +121,7 @@ const Resume = () => {
     return axios.put(url, file, config)
       .then((response) => {
         console.log('File uploaded to s3 successfully!', response);
-        // TODO: call resume-update api
-        refreshUser()
+        updateUserResume(file.name)
       })
       .catch((error) => {
         console.error('Error uploading file!', error);
@@ -134,9 +136,17 @@ const Resume = () => {
       return
     }
 
-    // TODO: fetch reviewers here
-
-    setResumeRequestStep('REVIEWER_SELECTION');
+    (async () => {
+      try {
+        const resp = await axios.post('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/search', {
+          'keywords': keywordsRef.current.value,
+        })
+        setReviewers(resp.data.body)
+        setResumeRequestStep('REVIEWER_SELECTION');
+      } catch (e) {
+        toast.error("Failed to fetch reviewers!")
+      }
+    })()
   }
 
   const submitReviewRequest = () => {
@@ -144,14 +154,28 @@ const Resume = () => {
       toast.error('Please select a reviewer to continue!')
       return
     }
-
-    // TODO: connect api here
+    (async () => {
+      try {
+        let loginInfo = JSON.parse(localStorage.getItem('login'));
+        const req = {
+          userId: loginInfo.email,
+          resumeId: selectedResume,
+          reviewers: [selectedReviewer.emailId]
+        }
+        await axios.post('https://n4dcx9l98a.execute-api.us-east-1.amazonaws.com/v1/resume-requests', req)
+        setResumeRequestStep('RESUME_SELECTION')
+        refreshUser()
+        getPastRequests()
+      } catch (e) {
+        toast.error('Failed to submit request! ' + e.message)
+      }
+    })()
   }
 
   return (
     <div className={'resume'}>
       <div className={'request'}>
-        <div className={'header'}>Request resume review</div>
+        <div className={'header'}>Request resume review ({userInfo.resumeReviewRemaining} remaining)</div>
         <div className={'body'}>
           <div className={'left-pane'}>
             {
@@ -159,6 +183,7 @@ const Resume = () => {
               <div>
                 <div className={'text'}>Choose a resume:</div>
                 {
+                  userInfo &&
                   userInfo.resumes &&
                   userInfo.resumes.length > 0 &&
                   userInfo.resumes.map(resume =>
@@ -196,6 +221,7 @@ const Resume = () => {
               <div>
                 <div className={'text'}>Choose a reviewer:</div>
                 {
+                  reviewers && reviewers.length > 0 &&
                   reviewers.map(reviewer =>
                     <div className={'radio-pane'}>
                       <label>
@@ -208,6 +234,9 @@ const Resume = () => {
                           onChange={() => selectReviewer(reviewer)}
                         />
                       </label>
+                      <a href={reviewer.profile} target={'_blank'}>
+                        <img alt={'linkedin'} src={linkedinSvg}/>
+                      </a>
                     </div>
                   )
                 }
@@ -229,32 +258,44 @@ const Resume = () => {
           }
         </div>
       </div>
-      <div className={'past'}>
-        <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Past requests</div>
-        <table>
-          <thead>
-          <tr>
-            <th>Date</th>
-            <th>Resume</th>
-            <th>Reviewer</th>
-            <th>Status</th>
-          </tr>
-          </thead>
-          <tbody>
-          {pastRequests.map((request, index) => {
-            return <tr key={index}>
-              <td>{request.date}</td>
-              <td>{request.resume}</td>
-              <td>{request.reviewer}</td>
-              <td>
-                {getStatusLabel(request.status)}
-              </td>
+      {
+        pastRequests &&
+        pastRequests.length > 0 &&
+        <div className={'past'}>
+          <div style={{fontSize: '24px', lineHeight: '29px', color: '#0033A0'}}>Past requests</div>
+          <table>
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Resume</th>
+              <th>Reviewer</th>
+              <th>Status</th>
             </tr>
-          })}
+            </thead>
+            <tbody>
+            {pastRequests.map((request, index) => {
+              return <tr key={index}>
+                <td>{request.date}</td>
+                <td>
+                  <a href={`https://resume-bucket-p1.s3.amazonaws.com/${request.rid}`} target={'_blank'}>
+                    {request.rid}
+                  </a>
+                </td>
+                <td>
+                  <a href={request.aid_profile && request.aid_profile.profile} target={'_blank'}>
+                    {request.reviewer}
+                  </a>
+                </td>
+                <td>
+                  {getStatusLabel(request.status)}
+                </td>
+              </tr>
+            })}
 
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      }
     </div>
   )
 }
